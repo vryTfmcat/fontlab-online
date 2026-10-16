@@ -1,5 +1,11 @@
 # 更新与部署说明
 
+在线字体实验台 · 逐字体覆盖比较 + 浏览器内本地字体导入。
+
+- 线上地址：https://fontlab-online.netlify.app
+- 源码仓库：https://github.com/vryTfmcat/fontlab-online
+- 许可与署名：https://fontlab-online.netlify.app/licenses.html
+
 纯静态站点：没有构建步骤、没有后端、没有依赖安装。
 
 ## 目录
@@ -21,24 +27,25 @@
 npx serve .            # 或 VS Code 的 Live Server，或任何静态服务器
 ```
 
-然后用浏览器打开它给出的地址。注意：**直接双击 `index.html`（`file://`）不行** ——
-浏览器会拦截 `file://` 页面读取字体文件，字体无法加载。
+然后用浏览器打开它给出的地址。注意：**直接双击 `index.html` 打开不行** ——
+浏览器的本地文件协议会拦截字体文件的读取，字体无法加载。线上访问不受此限制。
 
-## 更新内容
+## 部署
 
-1. 改页面：直接编辑 `index.html` / `licenses.html`。
-2. 改公开字体集合：在交付目录的 `_scripts/publish_build.py` 里调整 `PUBLIC_IDS` 与 `LICENSE_MAP`，
-   按下方顺序重跑脚本，会同时重建 `data/`、`fonts/`、`licenses/`、`licenses.html`、`netlify.toml`。
-3. 提交推送：
+线上地址：**https://fontlab-online.netlify.app**（Netlify 项目 `fontlab-online`，免费套餐）
+
+更新内容后：
 
 ```
 git add -A
 git commit -m "update"
 git push
+netlify deploy --prod --dir=.     # 在本目录执行
 ```
 
-推送到关联的 GitHub 仓库后，Netlify 会自动重新发布（默认几十秒）。
-若用 Netlify 手动部署，把本目录整体拖到 Netlify 的 Deploys 面板即可。
+目前站点是 CLI 部署的，**还没有绑定 Git 自动部署**。想接上（一次性操作）：
+Netlify → 本项目 → Project configuration → Build & deploy → Continuous deployment → Link repository，
+选 `vryTfmcat/fontlab-online`，构建命令留空、发布目录填 `.`；之后 `git push` 就会自动重新发布。
 
 ## 重新生成与验收（脚本在交付目录 `07_字体盘点/_scripts/`，不在本仓库内）
 
