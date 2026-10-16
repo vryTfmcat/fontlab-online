@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>在线字体实验台 · 逐字体覆盖比较</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#f6f8fa; --fg:#1f2328; --fg2:#57606a;
+    --line:#d0d7de; --line2:#eaeef2;
+    --green:#1a7f37; --greenbg:#dafbe1;
+    --amber:#9a6700; --amberbg:#fff8c5;
+    --orange:#bc4c00; --orangebg:#fff1e5;
+    --red:#cf222e; --redbg:#ffebe9;
+    --purple:#7d4cdb; --purplebg:#f3ecff;
+    --blue:#0969da; --bluebg:#ddf4ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--fg);
+    font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  }
+  header{
+    border-bottom:1px solid var(--line); background:var(--bg2);
+    padding:16px 22px; position:sticky; top:0; z-index:20;
+  }
+  header h1{margin:0 0 4px; font-size:17px; font-weight:600}
+  header .sub{margin:0; color:var(--fg2); font-size:12.5px}
+  main{padding:18px 22px 80px; max-width:1400px}
+  .panel{
+    border:1px solid var(--line); border-radius:8px; background:var(--bg);
+    padding:14px 16px; margin-bottom:16px;
+  }
+  .panel > h2{
+    margin:0 0 10px; font-size:14px; font-weight:600;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .panel > h2 .hint{font-weight:400; color:var(--fg2); font-size:12px}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px}
+  .row:last-child{margin-bottom:0}
+  label{font-size:12.5px; color:var(--fg2)}
+  textarea{
+    width:100%; min-height:74px; resize:vertical; padding:9px 11px;
+    border:1px solid var(--line); border-radius:6px; background:var(--bg);
+    color:var(--fg); font-size:15px; line-height:1.7;
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  }
+  input[type=text],select{
+    padding:6px 9px; border:1px solid var(--line); border-radius:6px;
+    background:var(--bg); color:var(--fg); font-size:13px;
+  }
+  input[type=range]{width:220px; vertical-align:middle}
+  button{
+    padding:5px 11px; border:1px solid var(--line); border-radius:6px;
+    background:var(--bg2); color:var(--fg); font-size:12.5px; cursor:pointer;
+  }
+  button:hover{background:var(--line2)}
+  button.primary{background:var(--blue); border-color:var(--blue); color:#fff}
+  code,.mono{font-family:"Cascadia Mono",Consolas,"Courier New",monospace; font-size:12px}
+  .chip{
+    display:inline-block; padding:1px 7px; border-radius:20px;
+    font-size:11.5px; line-height:1.7; border:1px solid transparent; white-space:nowrap;
+  }
+  .c-covered{color:var(--green); background:var(--greenbg); border-color:#aceebb}
+  .c-blank_mapped{color:var(--blue); background:var(--bluebg); border-color:#b6e3ff}
+  .c-no_ink{color:var(--amber); background:var(--amberbg); border-color:#f5e6a8}
+  .c-same_pixels{color:var(--fg2); background:#eef1f4; border-color:var(--line)}
+  .c-no_mapping{color:var(--orange); background:var(--orangebg); border-color:#ffd8b5}
+  .c-loadfail{color:var(--red); background:var(--redbg); border-color:#ffcecb}
+  .c-pending{color:var(--fg2); background:var(--bg2); border-color:var(--line)}
+  .c-unexpected{color:var(--purple); background:var(--purplebg); border-color:#ddd0ff}
+  .c-invalid{color:var(--fg2); background:var(--bg2); border-color:var(--line)}
+  .dimchip{
+    display:inline-block; padding:0 6px; border-radius:4px; font-size:11px;
+    border:1px solid var(--line); background:var(--bg2); color:var(--fg2); white-space:nowrap;
+  }
+  .c-compat{color:var(--purple); background:var(--purplebg); border-color:#ddd0ff}
+  .compatnote{
+    border:1px solid #ddd0ff; background:var(--purplebg); color:#3c1f7b;
+    border-radius:6px; padding:8px 10px; font-size:12px; margin-bottom:8px;
+  }
+
+  #fontlist{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:8px}
+  .fitem{
+    border:1px solid var(--line); border-radius:6px; padding:8px 10px;
+    display:flex; gap:9px; align-items:flex-start; cursor:pointer; background:var(--bg);
+  }
+  .fitem:hover{background:var(--bg2)}
+  .fitem.on{border-color:var(--blue); background:var(--bluebg)}
+  .fitem input{margin-top:3px}
+  .fitem .meta{font-size:11.5px; color:var(--fg2); line-height:1.55}
+  .fitem .nm{font-size:12.5px; font-weight:600; word-break:break-all}
+  .fitem .bad{color:var(--red)}
+
+  .legend{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:8px}
+  .legend .li{border:1px solid var(--line2); border-radius:6px; padding:8px 10px}
+  .legend .li b{display:block; margin-bottom:2px; font-size:12.5px}
+  .legend .li span{font-size:11.5px; color:var(--fg2)}
+
+  .pvcard{border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:12px}
+  .pvhead{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px}
+  .pvhead .nm{font-weight:600; font-size:13px}
+  .pvbox{
+    border:1px dashed var(--line); border-radius:6px; padding:10px 12px;
+    overflow-x:auto; white-space:pre-wrap; word-break:break-all; background:var(--bg2);
+  }
+  .str{display:block; unicode-bidi:normal}
+  .striplabel{font-size:11.5px; color:var(--fg2); margin:8px 0 4px}
+  .strip{display:flex; flex-wrap:wrap; gap:3px}
+  .sc{
+    min-width:34px; text-align:center; padding:3px 4px; border-radius:4px;
+    font-size:11px; border:1px solid var(--line2); cursor:default;
+  }
+  table{border-collapse:collapse; font-size:12px; width:100%}
+  th,td{border:1px solid var(--line); padding:4px 7px; text-align:left; vertical-align:top}
+  th{background:var(--bg2); font-weight:600; position:sticky; top:0}
+  .matrixwrap{overflow:auto; max-height:520px; border:1px solid var(--line); border-radius:6px}
+  .mx{white-space:nowrap; font-size:11.5px}
+  .mx td.cell{text-align:center; font-size:11px}
+  .warn{
+    border:1px solid #ffcecb; background:var(--redbg); color:#82071e;
+    border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px;
+  }
+  .warn b{display:block; margin-bottom:4px}
+  .tip{border:1px solid #b6e3ff; background:var(--bluebg); border-radius:8px; padding:10px 12px; font-size:12.5px; margin-bottom:12px}
+  .kpi{display:flex; gap:8px; flex-wrap:wrap}
+  .kpi .k{border:1px solid var(--line); border-radius:6px; padding:7px 11px; background:var(--bg2)}
+  .kpi .k b{display:block; font-size:16px}
+  .kpi .k span{font-size:11.5px; color:var(--fg2)}
+  .glyph{font-size:26px; line-height:1.3}
+  details{margin-top:8px}
+  summary{cursor:pointer; font-size:12.5px; color:var(--fg2)}
+  .muted{color:var(--fg2)}
+  .nowrap{white-space:nowrap}
+  .tag{font-size:11px; color:var(--fg2); border:1px solid var(--line); border-radius:4px; padding:0 5px}
+  /* 本地导入字体：映射维度未能解析时使用的三个独立判定色（沿用原配色，不新增视觉语言） */
+  .c-covered_nomap{color:var(--green); background:var(--greenbg); border-color:#aceebb}
+  .c-blank_nomap{color:var(--blue); background:var(--bluebg); border-color:#b6e3ff}
+  .c-noink_nomap{color:var(--amber); background:var(--amberbg); border-color:#f5e6a8}
+
+  .impzone{
+    border:1.5px dashed var(--line); border-radius:8px; background:var(--bg2);
+    padding:14px; text-align:center; font-size:12.5px; color:var(--fg2);
+  }
+  .impzone.over{border-color:var(--blue); background:var(--bluebg); color:var(--blue)}
+  .impzone input[type=file]{font-size:12.5px}
+  #implist{margin-top:10px}
+  #implist table{font-size:11.5px}
+  .hash{font-family:"Cascadia Mono",Consolas,monospace; font-size:10.5px; word-break:break-all}
+  .okmark{color:var(--green)}
+  .badmark{color:var(--red)}
+  footer{
+    border-top:1px solid var(--line); background:var(--bg2); color:var(--fg2);
+    padding:14px 22px; font-size:12px;
+  }
+  footer a{color:var(--blue)}
+</style>
+</head>
+<body>
+<header>
+  <h1>在线字体实验台 <span class="tag">纯静态 · 浏览器内运行 · 不上传</span>
+    <a href="licenses.html" style="font-size:12px;font-weight:400;margin-left:8px">许可与署名</a></h1>
+  <p class="sub">逐字体预览指定字体文件，显示码点，并比较所选字体的覆盖差异。
+     <b>四个维度分开呈现</b>：cmap 映射（解析自文件） / 文件加载 / 像素差异 / 判定置信度。
+     六种判定：<b>本字体覆盖（确定）</b> / <b>空白字符·字体已定义（语义）</b> / <b>有映射但描不出可见字形</b> /
+     <b>像素与回退相同·未能区分</b> / <b>cmap 无映射（浏览器回退）</b> / <b>字体文件无法加载</b>。
+     像素相同一律只记「未能区分」，不推断为不覆盖，也不推断为空字形；系统回退字形不会被记为该字体支持。
+     本站自带 <b id="bundledn">若干</b> 个许可证据明确、允许再分发的字体；其余源文件因许可存疑或依赖未公开的兼容副本而不随站发布。
+     你也可以从本机选择字体文件，<b>只在浏览器内解析与渲染，不会上传</b>。</p>
+</header>
+
+<main>
+  <div id="envwarn"></div>
+
+  <section class="panel">
+    <h2>1 · 输入与字号 <span class="hint">输入的文字会逐字符按码点判定，不按字形外观猜测</span></h2>
+    <div class="row">
+      <label style="flex:1">
+        <span style="display:block;margin-bottom:4px">输入文字</span>
+        <textarea id="text" spellcheck="false"></textarea>
+      </label>
+    </div>
+    <div class="row">
+      <label>字号</label>
+      <input type="range" id="size" min="10" max="160" value="44">
+      <span class="mono" id="sizev">44 px</span>
+      <span style="width:16px"></span>
+      <button id="btnSampleLatin">样例：拉丁+符号</button>
+      <button id="btnSampleCJK">样例：中日韩</button>
+      <button id="btnSampleAstral">样例：星平面/楔形/埃及</button>
+      <button id="btnSampleEmoji">样例：Emoji</button>
+      <button id="btnClear">清空</button>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="showRef" checked> 预览下方显示「浏览器回退渲染」对照</label>
+      <label><input type="checkbox" id="tint" checked> 状态色带</label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>2 · 选择字体 <span class="hint" id="selinfo"></span></h2>
+    <div class="row">
+      <input type="text" id="q" placeholder="筛选：文件名 / 家族 / 格式" style="min-width:280px;flex:1">
+      <button id="btnVerify3">验证集（3 个）</button>
+      <button id="btnLight">轻量集（≤2 MB）</button>
+      <button id="btnAll">全选</button>
+      <button id="btnNone">清空选择</button>
+      <button id="btnReload">重新加载所选</button>
+    </div>
+    <div class="tip">
+      每个字体以 <b>唯一别名</b>（如 <span class="mono">FNT_f20</span>）注册，而不是用它内部的家族名。
+      这样即使系统里装过同名同家族字体，浏览器也不会命中系统字体，判定结果只反映所选文件本身。
+      <br>字体文件<b>按需加载</b>：勾选某个字体时才去取它对应的文件。
+    </div>
+    <div id="compatinfo"></div>
+    <div id="fontlist"></div>
+  </section>
+
+  <section class="panel">
+    <h2>2b · 本地导入字体 <span class="hint">文件只在你的浏览器里被读取与解析，不会上传到任何服务器（本站没有后端）</span></h2>
+    <div class="impzone" id="impzone">
+      <input type="file" id="impfiles" multiple accept=".ttf,.otf,.ttc,.woff,.woff2">
+      <div style="margin-top:8px">或把字体文件拖到这里 · 支持 TTF / OTF / TTC / WOFF / WOFF2</div>
+      <div style="margin-top:6px;color:var(--fg2)">
+        导入后会<b>当场解析这份文件的 cmap</b>，并单独登记为「本地导入」，<b>不会套用页面自带清单里的任何数据</b>。
+        WOFF2 需要 Brotli 解压，浏览器未提供该接口，因此 WOFF2 的映射维度会标为「未解析」，只做像素比较。
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="btnImpClear">移除全部导入字体</button>
+      <span class="muted" id="impinfo">尚未导入任何本地字体文件。</span>
+    </div>
+    <div id="implist"></div>
+  </section>
+
+  <section class="panel">
+    <h2>3 · 状态含义</h2>
+    <div class="legend" id="legend"></div>
+    <div class="tip" style="margin-top:10px">
+      判定方法：把该码点分别用「所选字体别名」与「一个必然不存在的字体名」各绘制一次，比较像素。
+      <b>关键事实</b>：同一个码点回退画两次是逐像素完全一致的（差异像素 = 0），
+      所以出现可重复的非零差异，就说明这次确实用上了所选字体文件。
+      <br><br>
+      <b>但「像素相同」不等于「该字体不覆盖」</b>：也可能是该字体画出了与回退相同的形状，或者两边都没有墨迹。
+      因此本页把四件事分开：<b>cmap 映射</b>（解析自字体文件，与渲染无关）、
+      <b>文件加载</b>（能否被浏览器接受）、<b>像素差异</b>（差异像素数 / 是否可比）、
+      <b>置信度</b>（确定 / 语义 / 未能区分 / 无结论）。
+      像素与回退相同一律记为 <b>未能区分</b>，不下「不覆盖」也不下「空字形」的结论。
+      <br><br>
+      空白字符（U+0020 空格、U+3000 全角空格、U+00A0、零宽与控制字符等）在像素上天然没有分辨力，
+      按<b>语义</b>单独处理：<b>只按 cmap 判定，完全不使用像素证据</b>。cmap 里有该码点就记「空白字符·字体已定义」，
+      并注明进宽差作为旁证，绝不与前几种混算。
+      另有实测现象：个别带 CBDT/CBLC 位图表的字体，会在空格、制表符上画出一块可见的实心图形；
+      这属于源文件位图数据异常，会另标「<b>空白位图异常</b>」并计入汇总，
+      但<b>仍不记为覆盖</b>。
+      进宽差（px）只作为补充数据显示，<b>不参与判定</b>——空格等字符的进宽本来就可能与回退不同。
+      悬停色带可看到每个字符的 cmap / 加载 / 像素 / 置信度依据。
+      <br><br>
+      <b>本地导入的字体另有一条纪律</b>：若这份文件的 cmap <b>未能在浏览器内解析</b>（例如 WOFF2 需要 Brotli 解压），
+      映射维度一律记为「未解析」，此时的判定改用独立的三个判定码（<b>本字体覆盖·映射未解析</b> /
+      <b>空白字符·映射未解析</b> / <b>无可见字形·映射未解析</b>），
+      <b>绝不套用页面自带清单里的码点数据来冒充这份文件</b>。
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>4 · 逐字体预览 <span class="hint">文字用所选字体文件绘制</span></h2>
+    <div class="kpi" id="kpis"></div>
+    <div id="previews" style="margin-top:12px"></div>
+  </section>
+
+  <section class="panel">
+    <h2>5 · 码点清单 <span class="hint" id="cpinfo"></span></h2>
+    <div class="matrixwrap"><table class="mx" id="cptable"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>6 · 覆盖差异汇总 <span class="hint">按当前输入文字统计</span></h2>
+    <div id="diffsum"></div>
+  </section>
+
+  <section class="panel">
+    <h2>7 · 诊断</h2>
+    <div class="row">
+      <button id="btnDiag">导出本次判定结果 JSON</button>
+      <span class="muted" id="diaginfo"></span>
+    </div>
+    <details><summary>原始判定明细（每字体 × 每码点）</summary><div id="rawdiag" class="mono" style="margin-top:8px;max-height:300px;overflow:auto"></div></details>
+  </section>
+</main>
+
+<footer>
+  <div>自带字体的许可与署名见 <a href="licenses.html">许可与署名</a>；
+    页面与判定逻辑沿用离线版，未做重新设计。判定结果仅供参考，浏览器与消毒器版本不同可能影响结果。</div>
+  <div style="margin-top:4px">本站为纯静态页面：没有后端、没有数据库、不会上传任何文件；所有资源均为相对路径。</div>
+</footer>
+
+<script src="data/fontlab-data.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+
+// 数据与字体全部走相对路径；没有任何后端、也没有本机绝对路径。
+const DATA = window.FONTLAB_DATA;
+
+const ALIAS = id => "FNT_" + id;
+const IMP_ALIAS = id => "IMP_" + id;
+const NONEXIST = "FNT_ZZ_NO_SUCH_FAMILY_ZZ";
+const DETECT_SIZE = 56;           // 判定用的固定字号（与预览字号解耦，保证结果稳定）
+const MAX_MATRIX_CPS = 300;
+
+const STATE = {
+  manifest:null, ranges:null, blocks:null,
+  imported:[],                  // 本地导入的字体（只在浏览器内解析，绝不与自带清单混用）
+  impseq:0,
+  selected:new Set(), ff:{}, status:{}, err:{},
+  src:{},                       // id -> "bundled" | "imported"：本次实际用于渲染的那个文件
+  cache:new Map(), results:new Map(), timer:null, detSize:DETECT_SIZE
+};
+
+const META = {
+  covered:      {label:"本字体覆盖（确定）", short:"覆盖", color:"green",
+                 desc:"cmap 里有该码点，且实际像素与浏览器回退不同 → 画面上的字形确实由所选字体文件绘制。置信度：确定（像素证据）。"},
+  blank_mapped: {label:"空白字符 · 字体已定义", short:"空白·已定义", color:"blue",
+                 desc:"该码点在语义上就是空白（空格、全角空格、零宽字符等），像素比对不适用。字体 cmap 里有它 → 这段空白由该字体提供。置信度：语义判定（像素不适用），进宽差仅作旁证。若该字体在空白码点上画出了墨点（源文件位图数据的异常），会另标「空白位图异常」，仍不计入覆盖。"},
+  no_ink:       {label:"有映射但描不出可见字形", short:"无可见字形", color:"amber",
+                 desc:"cmap 里有该码点，但该字体在这张码点上一个墨点都画不出来，而回退能画出来 → 该字体这份字形没有可绘制轮廓（例如只剩彩色位图表却已被剥离）。置信度：确定（像素证据）。"},
+  same_pixels:  {label:"像素与回退相同 · 未能区分", short:"未能区分", color:"grey",
+                 desc:"cmap 里有该码点，但绘制结果与浏览器回退逐像素完全相同 → 无法区分「该字体画出了与回退一样的形状」还是「该字体没有可用字形」。置信度：未能区分，不下结论。"},
+  no_mapping:   {label:"cmap 无映射（浏览器回退）", short:"无映射", color:"orange",
+                 desc:"从字体文件解析出的 cmap 里没有这个码点 → 画面上看到的字形一定来自系统回退，不是该字体的贡献。置信度：确定（解析结果）。"},
+  loadfail:     {label:"字体文件无法加载", short:"无法加载", color:"red",
+                 desc:"文件取不到，或被浏览器字体消毒器拒收 → 该字体所有字符都无法判断。置信度：无结论。"},
+  pending:      {label:"读取中", short:"读取中", color:"grey",
+                 desc:"正在加载字体文件，尚未完成判定。"},
+  unexpected:   {label:"需复核", short:"需复核", color:"purple",
+                 desc:"cmap 里没有该码点，但绘制结果却与回退不同 → 与解析结果矛盾，建议人工核查。"},
+  invalid:      {label:"无效码点", short:"无效", color:"grey",
+                 desc:"不是有效的 Unicode 标量值。"},
+  // 以下三个判定码只在「本地导入字体的 cmap 未能在浏览器内解析」时使用，与上面六种严格分开。
+  covered_nomap:{label:"本字体覆盖 · 映射未解析", short:"覆盖·映射未解析", color:"green",
+                 desc:"本地导入的这份文件，其 cmap 未能在浏览器内解析（例如 WOFF2 需 Brotli 解压），但它已被浏览器加载，且绘制结果与回退不同 → 有像素证据表明字形由这份文件绘制。置信度：确定（像素证据）；映射维度未知。"},
+  blank_nomap:  {label:"空白字符 · 映射未解析", short:"空白·映射未解析", color:"blue",
+                 desc:"该码点在语义上是空白，而这份导入文件的 cmap 未解析 → 像素比对不适用、映射也无从判断，因此既不能说「已定义」也不能说「未定义」。置信度：无结论。"},
+  noink_nomap:  {label:"无可见字形 · 映射未解析", short:"无可见字形·映射未解析", color:"amber",
+                 desc:"这份导入文件在该码点上一个墨点都画不出，而回退能画出；但它的 cmap 未解析 → 只能记为「无可见字形」，不推断它是否有映射。置信度：确定（像素证据）；映射维度未知。"}
+};
+// 置信度四档：把「来源可信程度」与判定结果本身分开标注
+const CONF = {
+  definite:         {label:"确定",             desc:"有像素或解析证据支撑"},
+  semantic:         {label:"语义判定",         desc:"像素无分辨力，按字符语义处理"},
+  indistinguishable:{label:"未能区分",         desc:"证据不足以区分，已拒绝下结论"},
+  unknown:          {label:"无结论",           desc:"无法判断"}
+};
+
+/* ---------------- 工具 ---------------- */
+function hex(cp, w){ return "U+" + cp.toString(16).toUpperCase().padStart(w||4, "0"); }
+function safeChar(cp){
+  if(cp < 0 || cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) return null;
+  try { return String.fromCodePoint(cp); } catch(e){ return null; }
+}
+function blockName(cp){
+  const bs = STATE.blocks; if(!bs) return "";
+  let lo=0, hi=bs.length-1, best="";
+  while(lo<=hi){ const m=(lo+hi)>>1; const b=bs[m];
+    if(cp<b[1]) hi=m-1; else if(cp>b[2]) lo=m+1; else return b[0]; }
+  return best;
+}
+function rangesHas(rel, cp){
+  const r = STATE.ranges && STATE.ranges[rel]; if(!r || !r.ranges) return false;
+  const a = r.ranges; let lo=0, hi=a.length-1;
+  while(lo<=hi){ const m=(lo+hi)>>1; const seg=a[m];
+    if(cp<seg[0]) hi=m-1; else if(cp>seg[1]) lo=m+1; else return true; }
+  return false;
+}
+// 映射查询：自带字体用随站数据（cmap 解析自同一份文件），
+// 本地导入字体只用「刚刚从这份文件里解析出来」的区间，绝不回退到随站清单。
+function binHas(a, cp){
+  let lo=0, hi=a.length-1;
+  while(lo<=hi){ const m=(lo+hi)>>1; const seg=a[m];
+    if(cp<seg[0]) hi=m-1; else if(cp>seg[1]) lo=m+1; else return true; }
+  return false;
+}
+function cmapState(f){
+  if(f.bundled) return "parsed";                    // 随站数据来自对该文件的 cmap 解析
+  return f._cmapParsed ? "parsed" : "unparsed";
+}
+function cmapHas(f, cp){
+  if(cmapState(f) !== "parsed") return null;        // null = 未解析，未知，不是「无映射」
+  return f.bundled ? rangesHas(f.rel, cp) : binHas(f._ranges || [], cp);
+}
+// 全部字体 = 随站自带 + 本地导入
+function allFonts(){
+  return (STATE.manifest ? STATE.manifest.fonts : []).concat(STATE.imported);
+}
+function findFont(id){ return allFonts().find(f => f.id === id); }
+function fmtSize(n){
+  if(n < 1024) return n + " B";
+  if(n < 1048576) return (n/1024).toFixed(1) + " KB";
+  return (n/1048576).toFixed(1) + " MB";
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function uniqueCps(text){
+  const out=[], seen=new Set();
+  for(const ch of text){ const cp=ch.codePointAt(0);
+    if(!seen.has(cp)){ seen.add(cp); out.push(cp); } }
+  return out;
+}
+// 语义空白：Unicode White_Space 属性
+function isWhitespaceCp(cp){
+  return (cp >= 0x09 && cp <= 0x0D) || cp === 0x20 || cp === 0x85 || cp === 0xA0 ||
+         cp === 0x1680 || (cp >= 0x2000 && cp <= 0x200A) ||
+         cp === 0x2028 || cp === 0x2029 || cp === 0x202F || cp === 0x205F || cp === 0x3000;
+}
+// 零宽 / 格式 / 控制字符：同样没有可比的墨迹
+function isZeroWidthCp(cp){
+  return cp < 0x20 || cp === 0x7F ||
+         (cp >= 0x200B && cp <= 0x200F) || (cp >= 0x202A && cp <= 0x202E) ||
+         (cp >= 0x2060 && cp <= 0x2064) || cp === 0xFEFF || cp === 0xE0001;
+}
+
+/* ---------------- canvas 绘制与比较 ---------------- */
+let CANVAS=null, CTX=null;
+function paint(alias, ch, size){
+  if(!CANVAS){ CANVAS=document.createElement("canvas"); CTX=CANVAS.getContext("2d",{willReadFrequently:true}); }
+  const pad = Math.ceil(size*0.5)+6;
+  const w = Math.max(8, Math.ceil(size*2.6)+pad*2);
+  const h = Math.ceil(size*2.0)+pad*2;
+  CANVAS.width=w; CANVAS.height=h;
+  CTX.clearRect(0,0,w,h);
+  CTX.fillStyle="#000"; CTX.textBaseline="alphabetic";
+  CTX.font = size + "px \"" + alias + "\", monospace";
+  let adv=0;
+  try { CTX.fillText(ch, pad, pad+Math.round(size*1.0)); adv = CTX.measureText(ch).width; } catch(e){}
+  const img = CTX.getImageData(0,0,w,h).data;
+  // 墨点统计：用于识别「有 cvmap 映射但描不出墨」的空字形
+  let ink=0, minx=1e9, miny=1e9, maxx=-1, maxy=-1;
+  for(let i=0,p=0;i<img.length;i+=4,p++){
+    if(img[i+3] > 12){ ink++;
+      const px=p%w, py=(p/w)|0;
+      if(px<minx)minx=px; if(px>maxx)maxx=px; if(py<miny)miny=py; if(py>maxy)maxy=py; }
+  }
+  return {img:img, w:w, h:h, adv:adv, ink:ink, bbox:(maxx<0?null:[minx,miny,maxx,maxy])};
+}
+// 差异像素数：容差 8，含 alpha。
+// 关键事实：同一个码点在「同一个回退字体」下画两次是逐像素完全一致的（差 0），
+// 所以只要出现可重复的非零差异，就说明这次真的用了别的字体。
+function pixelDiff(a,b){
+  if(a.w!==b.w || a.h!==b.h) return {n:Infinity, ratio:1};
+  const A=a.img, B=b.img; let n=0;
+  for(let i=0;i<A.length;i+=4){
+    if(Math.abs(A[i]-B[i])>8 || Math.abs(A[i+1]-B[i+1])>8 || Math.abs(A[i+2]-B[i+2])>8 || Math.abs(A[i+3]-B[i+3])>8) n++;
+  }
+  return {n:n, ratio: n/(A.length/4)};
+}
+// 判定把四件事分开记录，互不覆盖：
+//   cmap     ——「has / none」解析自字体文件的 cmap 子表，与渲染无关
+//   load     ——「ok / compat / fail / pending」这份文件能否被浏览器接受
+//   pixel    ——「差异像素数 / 是否可比」两张画布的逐像素比较结果
+//   confidence ——「确定 / 语义判定 / 未能区分 / 无结论」这次结论有多可信
+// 关键纪律：像素相同（differs=false）时只记「未能区分」，不推断为不覆盖，也不推断为空字形。
+function diagnose(f, cp){
+  const key = f.id + "|" + cp;
+  if(STATE.cache.has(key)) return STATE.cache.get(key);
+  const st = STATE.status[f.id];
+  const load = st === "error" ? "fail" : (st === "loaded" ? "ok" : "pending");
+  let out, final = true;
+  if(load === "fail"){
+    out = {code:"loadfail", load:"fail", cmap:"unknown", pixel:null, confidence:"unknown",
+           note:"字体文件无法加载，无法判断任何码点"};
+    final = false;   // 加载方式可能改变（重新加载），不能固化
+  } else if(load === "pending"){
+    out = {code:"pending", load:"pending", cmap:"unknown", pixel:null, confidence:"unknown",
+           note:"尚未加载完成"};
+    final = false;
+  } else {
+    const ch = safeChar(cp);
+    if(ch === null){
+      out = {code:"invalid", load:load, cmap:"unknown", pixel:null, confidence:"unknown",
+             note:"不是有效的 Unicode 标量值"};
+    } else {
+      const cs = cmapState(f);            // "parsed" | "unparsed"
+      const inCmap = cmapHas(f, cp);      // true / false / null（未解析）
+      const ref = paint(NONEXIST, ch, STATE.detSize);
+      const tst = paint(ALIAS(f.id), ch, STATE.detSize);
+      const d = pixelDiff(ref, tst);
+      const diffPx = (d.n === Infinity) ? -1 : d.n;
+      // 差异阈值只看像素（容差 8）：回退画两次恒为 0，非零即说明用上了别的字体。
+      // 进宽差不再参与判定——空格等字符的进宽天然可能与回退不同。
+      const differs = (d.n === Infinity) || (d.n >= 2);
+      const advDiff = +Math.abs(ref.adv - tst.adv).toFixed(3);
+      const blankKind = isWhitespaceCp(cp) ? "whitespace" : (isZeroWidthCp(cp) ? "zero_width" : null);
+      // 两边都没有墨迹时，像素比对在这张码点上没有分辨力
+      const inkless = (ref.ink === 0 && tst.ink === 0);
+      const semanticBlank = !!blankKind;
+      const ev = {
+        load: load,
+        cmap: (inCmap === null ? "unknown" : (inCmap ? "has" : "none")),
+        cmap_parsed: (cs === "parsed"),
+        cmap_source: f.bundled ? "bundled_dataset" : (cs === "parsed" ? "parsed_in_browser" : "unparsed"),
+        pixel: {applicable: !(semanticBlank || inkless), same: !differs, differs: differs,
+                diff_pixels: diffPx, ratio: +d.ratio.toFixed(6)},
+        ink: {test: tst.ink, fallback: ref.ink, test_only: 0},
+        advance: {test: +tst.adv.toFixed(3), fallback: +ref.adv.toFixed(3), diff: advDiff},
+        advance_diff: advDiff,
+        blank: semanticBlank, blank_kind: (blankKind || (inkless ? "inkless" : null)),
+        ink_anomaly: false
+      };
+      if(semanticBlank){
+        // 空白 / 零宽 / 控制字符：像素比对天然没有分辨力，一律只按 cmap 判定，
+        // 绝不把像素证据（哪怕是"画出了墨"）算作该字体覆盖。
+        // 若本字体在空白码点上画出了墨点，那是字体数据/渲染的异常，单独标注、待复核。
+        const kindTxt = (blankKind === "whitespace" ? "White_Space" : "零宽/格式");
+        const anomaly = (tst.ink > 0);
+        if(inCmap === null){
+          out = Object.assign({}, ev, {code:"blank_nomap", confidence:"unknown",
+            ink_anomaly:anomaly,
+            note:"空白字符（" + kindTxt + "）：像素比对不适用；这份导入文件的 cmap 未能在浏览器内解析 → " +
+                 "既不能说「已定义」也不能说「未定义」，不下结论" +
+                 (anomaly ? "。异常：本字体在此空白码点上画出了 " + tst.ink + " 个墨点（回退 " + ref.ink + "）" : "")});
+        }else if(inCmap){
+          // 注意合并顺序：ev 里也有 ink_anomaly 键，必须放在前面，否则会把这里设的值覆盖掉
+          out = Object.assign({}, ev, {code:"blank_mapped", confidence:"semantic",
+            ink_anomaly:anomaly, advance_support: advDiff > 0.2,
+            note:"空白字符（" + kindTxt + "）：像素比对不适用，按语义判定；cmap 里有该码点" +
+                 (advDiff > 0.2 ? "，且进宽与回退不同（+" + advDiff.toFixed(2) + "px）可作旁证"
+                                : "，进宽与回退一致（无旁证）") +
+                 (anomaly ? "。异常：本字体在此空白码点上画出了 " + tst.ink +
+                            " 个墨点（回退 " + ref.ink + "），不计入覆盖，标记待复核" : "")});
+        }else{
+          out = Object.assign({}, ev, {code:"no_mapping", confidence:"definite",
+            ink_anomaly:anomaly,
+            note:"空白字符（" + kindTxt + "）：cmap 无该码点" +
+                 (anomaly ? "；但本字体在此码点上画出了 " + tst.ink +
+                            " 个墨点（回退 " + ref.ink + "），属异常，标记待复核" : "")});
+        }
+      }
+      else if(inCmap === null){
+        // 映射未知：只用像素证据，且用独立的判定码，绝不借用「有映射」的结论
+        if(differs){
+          out = Object.assign({}, ev, {code:"covered_nomap", confidence:"definite",
+            note:"该导入文件的 cmap 未解析；绘制结果与回退不同（差异像素 " +
+                 (diffPx < 0 ? "尺寸不同" : diffPx) + "）→ 有像素证据表明字形由这份文件绘制"});
+        }else if(tst.ink === 0 && ref.ink > 0){
+          out = Object.assign({}, ev, {code:"noink_nomap", confidence:"definite",
+            note:"该导入文件的 cmap 未解析；本字体墨点 0，回退墨点 " + ref.ink +
+                 " → 这份文件在该码点画不出可见字形（是否有映射无从判断）"});
+        }else{
+          out = Object.assign({}, ev, {code:"same_pixels", confidence:"indistinguishable",
+            note: (ev.pixel.applicable
+                    ? "该导入文件的 cmap 未解析，且绘制结果与回退逐像素相同（差异像素 " + diffPx + "）→ 无法区分"
+                    : "该导入文件的 cmap 未解析，且两边都没有墨迹，像素比对无分辨力 → 无法区分")});
+        }
+      }
+      else if(inCmap && tst.ink === 0 && ref.ink > 0){
+        // 声明了映射却画不出墨，而回退能画出来 → 这份字形没有可绘制轮廓
+        out = Object.assign({code:"no_ink", confidence:"definite",
+          note:"cmap 有映射，但本字体墨点 0，回退墨点 " + ref.ink + " → 无可见字形"}, ev);
+      }
+      else if(inCmap && differs){
+        out = Object.assign({code:"covered", confidence:"definite",
+          note:"像素与回退不同（差异像素 " + (diffPx < 0 ? "尺寸不同" : diffPx) + "）→ 字形来自本字体"}, ev);
+      }
+      else if(inCmap && !differs){
+        // 「cmap 有映射但像素与回退相同」→ 只能说未能区分，不能判为不覆盖/空字形
+        out = Object.assign({code:"same_pixels", confidence:"indistinguishable",
+          note: (ev.pixel.applicable
+                  ? "cmap 有映射，但绘制结果与回退逐像素相同（差异像素 " + diffPx + "）→ 无法区分"
+                  : "cmap 有映射，但两边都没有墨迹，像素比对无分辨力 → 无法区分")}, ev);
+      }
+      else if(!inCmap && !differs){
+        out = Object.assign({code:"no_mapping", confidence:"definite",
+          note:"cmap 无该码点与回退像素相同 → 字形来自系统回退"}, ev);
+      }
+      else {
+        out = Object.assign({code:"unexpected", confidence:"unknown",
+          note:"cmap 无该码点却与回退不同，与解析结果矛盾，需复核"}, ev);
+      }
+    }
+  }
+  // 只缓存已定论的结果：pending / loadfail 会随加载状态变化，绝不能缓存
+  if(final) STATE.cache.set(key, out);
+  return out;
+}
+function clearCache(){ STATE.cache.clear(); }
+function dropCacheFor(id){
+  for(const k of [...STATE.cache.keys()]) if(k.startsWith(id + "|")) STATE.cache.delete(k);
+}
+
+/* ---------------- 字体加载 ---------------- */
+function isLoaded(st){ return st === "loaded"; }
+function errText(e){
+  return (e && (e.name || e.message)) ? (e.name + ": " + e.message) : String(e);
+}
+// 刻意先用 fetch 取字节、再把字节交给 FontFace：
+// 这样「文件取不到」和「文件取到了但被浏览器拒收」是两种明确不同的报错，不会混为一谈。
+// 本机文件用 FileReader 的 arrayBuffer 直接读，一样是「先拿字节、再交 FontFace」。
+async function bytesFromUrl(path){
+  try{
+    const res = await fetch(encodeURI(path));
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    return await res.arrayBuffer();
+  }catch(e){
+    throw new Error("文件读取失败（" + ((e && e.message) || e) + "）");
+  }
+}
+async function registerFace(alias, buf){
+  let ff;
+  try{
+    ff = new FontFace(alias, buf);
+  }catch(e){
+    throw new Error("浏览器拒绝这份字体数据：" + errText(e));
+  }
+  try{
+    await ff.load();
+  }catch(e){
+    throw new Error("浏览器拒绝这份字体数据：" + errText(e));
+  }
+  document.fonts.add(ff);
+  return ff;
+}
+async function ensureFont(f){
+  const cur = STATE.status[f.id];
+  if(isLoaded(cur)) return cur;
+  if(cur === "loading") return cur;
+  STATE.status[f.id] = "loading"; dropCacheFor(f.id); paintList(); paintKPIs();
+  try{
+    const buf = f.bundled ? await bytesFromUrl(f.url_path) : await f._file.arrayBuffer();
+    STATE.ff[f.id] = await registerFace(ALIAS(f.id), buf);
+    STATE.status[f.id] = "loaded";
+    STATE.src[f.id] = f.bundled ? "bundled" : "imported";
+  }catch(e){
+    STATE.err[f.id] = errText(e);
+    STATE.status[f.id] = "error";
+  }
+  // 加载状态变化后必须让旧判定失效，否则会把「读取中」当成最终结论缓存下来
+  dropCacheFor(f.id);
+  paintList(); paintKPIs();
+  return STATE.status[f.id];
+}
+async function ensureSelected(){
+  const list = allFonts().filter(f => STATE.selected.has(f.id));
+  for(const f of list){ await ensureFont(f); }
+}
+function resetFontState(id){ delete STATE.ff[id]; delete STATE.src[id]; STATE.status[id] = "idle"; dropCacheFor(id); }
+
+function paintCompatInfo(){
+  const all = STATE.manifest.fonts;
+  const bad = all.filter(f => f.load_ok === false);
+  $("#bundledn").textContent = all.length;
+  $("#compatinfo").innerHTML =
+    '<div class="tip" style="margin-bottom:0"><b>本站自带 ' + all.length + ' 个字体文件，全部是许可证据明确、允许再分发的原文件</b>（原样复制，未做任何修改；' +
+      '逐文件 SHA-256 与源文件一致）。许可与署名见 <a href="licenses.html">许可与署名</a>。<br>' +
+      '这一批实测都能被浏览器加载' + (bad.length ? '（其中 ' + bad.length + ' 个例外）' : '') + '。' +
+      '原始字体集里的其余文件未随站发布：许可存疑的、许可证据不明确的，以及被浏览器消毒器拒收、只能靠兼容副本渲染的，' +
+      '按“存疑字体与兼容副本暂不公开”的要求一律不进发布目录。' +
+      '要看这些文件，请用下面的「本地导入」——文件只在你自己的浏览器里解析。</div>';
+}
+
+/* ---------------- 数据装载 ---------------- */
+function boot(){
+  if(!DATA || !DATA.fonts){
+    $("#envwarn").innerHTML = '<div class="warn"><b>数据文件读取失败</b>' +
+      '未能加载 <span class="mono">data/fontlab-data.js</span>。请确认这个文件与 index.html 的相对位置没有被改动。</div>';
+    return;
+  }
+  STATE.manifest = {fonts: DATA.fonts, count: DATA.count};
+  STATE.ranges = DATA.ranges;
+  STATE.blocks = DATA.blocks;
+  paintList(); paintLegend(); paintKPIs(); paintCompatInfo();
+  $("#text").value = "Aa 汉字 仮名 𒀀 𓀀 𝔸 😀 𠀀";
+  $("#text").dispatchEvent(new Event("input"));
+  // 验证集：3 个代表性字体（都在随站公开集合内）
+  const trio = STATE.manifest.fonts.filter(f =>
+    /Gentium-Regular\.ttf$/.test(f.file) ||
+    /unifont-17\.0\.04\.otf$/.test(f.file) ||
+    /NotoSansCuneiform-Regular\.ttf$/.test(f.file));
+  trio.forEach(f => STATE.selected.add(f.id));
+  paintList();
+  ensureSelected().then(schedule);
+}
+
+/* ---------------- 渲染：列表 / 图例 / KPI ---------------- */
+function filteredFonts(){
+  const q = $("#q").value.trim().toLowerCase();
+  return allFonts().filter(f =>
+    !q || (f.file + " " + (f.family||"") + " " + (f.style||"") + " " + f.format + " " + f.rel).toLowerCase().includes(q));
+}
+function statusChip(st){
+  if(st === "loaded")  return '<span class="chip c-covered">已加载</span>';
+  if(st === "loading") return '<span class="chip c-pending">读取中</span>';
+  if(st === "error")   return '<span class="chip c-loadfail">无法加载</span>';
+  return '<span class="chip c-pending">未加载</span>';
+}
+function cmapChip(f){
+  const cs = cmapState(f);
+  if(cs !== "parsed") return '<span class="chip c-no_mapping" title="浏览器未提供 Brotli 解压，本页无法解析该格式的 cmap">映射未解析</span>';
+  const n = f.bundled ? f.cps : f._cmapCount;
+  return '<span class="chip c-blank_mapped" title="解析自这份字体文件的 cmap 子表">cmap ' + (n||0).toLocaleString() + ' 码点</span>';
+}
+function paintList(){
+  const list = filteredFonts();
+  $("#fontlist").innerHTML = list.map(f => {
+    const st = STATE.status[f.id] || "idle";
+    const err = st === "error" && STATE.err[f.id]
+      ? '<div class="meta bad">' + esc(STATE.err[f.id]) + '</div>' : "";
+    const org = f.bundled
+      ? '<span class="tag">随站自带</span>'
+      : '<span class="tag" style="border-color:#b6e3ff;color:#0969da">本地导入 · 未上传</span>';
+    return '<label class="fitem' + (STATE.selected.has(f.id) ? ' on' : '') + '">' +
+      '<input type="checkbox" data-id="' + f.id + '"' + (STATE.selected.has(f.id) ? ' checked' : '') + '>' +
+      '<span style="flex:1">' +
+        '<span class="nm">' + esc(f.file) + '</span> ' + statusChip(st) + ' ' + org +
+        '<div class="meta">家族：' + esc(f.family||"—") + ' · 样式：' + esc(f.style||"—") +
+          ' · ' + esc((f.format||"?").toUpperCase()) + ' · ' + fmtSize(f.size) + '</div>' +
+        '<div class="meta">' + cmapChip(f) + ' 许可 ' + esc(f.license||"—") + '</div>' +
+        (f.bundled ? '<div class="meta">' + esc(f.rel) + '</div>' : '') +
+        (f.note ? '<div class="meta">' + esc(f.note) + '</div>' : "") + err +
+      '</span></label>';
+  }).join("");
+  const sel = allFonts().filter(f => STATE.selected.has(f.id));
+  $("#selinfo").textContent = "已选 " + sel.length + " / " + allFonts().length +
+    " 个字体文件（自带 " + (STATE.manifest ? STATE.manifest.count : 0) + " + 本地导入 " + STATE.imported.length + "）· 列表显示 " + list.length;
+}
+function paintLegend(){
+  $("#legend").innerHTML = Object.keys(META).map(k =>
+    '<div class="li"><b><span class="chip c-' + k + '">' + META[k].label + '</span></b>' +
+    '<span>' + META[k].desc + '</span></div>').join("");
+}
+function paintKPIs(){
+  const sel = allFonts().filter(f => STATE.selected.has(f.id));
+  let loaded=0, err=0, loading=0, unbounded=0, bloaded=0;
+  sel.forEach(f => { const s=STATE.status[f.id]||"idle";
+    if(s==="loaded"){ loaded++; if(!f.bundled) bloaded++; }
+    else if(s==="error") err++; else if(s==="loading") loading++; });
+  const cps = uniqueCps($("#text").value || "");
+  const willDetect = sel.filter(f => isLoaded(STATE.status[f.id])).length * cps.length;
+  $("#kpis").innerHTML =
+    kpi(sel.length, "已选字体") + kpi(loaded, "已加载") +
+    (bloaded ? kpi(bloaded, "其中本地导入") : "") +
+    kpi(err, "无法加载") + (loading ? kpi(loading, "读取中") : "") +
+    kpi(cps.length, "唯一码点") + kpi(willDetect, "待判定次数");
+}
+function kpi(n, t){ return '<div class="k"><b>' + n + '</b><span>' + t + '</span></div>'; }
+
+/* 判定计数：每种结论分开统计，不再把「未能区分」并进任何一类 */
+const VKEYS = ["covered","blank_mapped","no_ink","same_pixels","no_mapping","unexpected",
+               "covered_nomap","blank_nomap","noink_nomap","loadfail","pending","invalid"];
+function countVerdicts(m, cps){
+  const o = {}; VKEYS.forEach(k => o[k] = 0);
+  o.ink_anomaly = 0;   // 空白码点上却画出墨点的条数（不计入任何判定类别）
+  cps.forEach(cp => { const v = m.get(cp); if(!v) return;
+    if(o[v.code] !== undefined) o[v.code]++;
+    if(v.ink_anomaly) o.ink_anomaly++; });
+  return o;
+}
+function verdictChips(o, cpsLength, extra){
+  const parts = [];
+  if(o.covered)      parts.push('<span class="chip c-covered">确定覆盖 ' + o.covered + '</span>');
+  if(o.blank_mapped) parts.push('<span class="chip c-blank_mapped">空白·已定义 ' + o.blank_mapped + '</span>');
+  if(o.ink_anomaly)  parts.push('<span class="chip c-unexpected">空白位图异常 ' + o.ink_anomaly + '</span>');
+  if(o.no_ink)       parts.push('<span class="chip c-no_ink">无可见字形 ' + o.no_ink + '</span>');
+  if(o.covered_nomap) parts.push('<span class="chip c-covered_nomap">覆盖·映射未解析 ' + o.covered_nomap + '</span>');
+  if(o.blank_nomap)  parts.push('<span class="chip c-blank_nomap">空白·映射未解析 ' + o.blank_nomap + '</span>');
+  if(o.noink_nomap)  parts.push('<span class="chip c-noink_nomap">无可见字形·映射未解析 ' + o.noink_nomap + '</span>');
+  if(o.same_pixels)  parts.push('<span class="chip c-same_pixels">未能区分 ' + o.same_pixels + '</span>');
+  if(o.no_mapping)   parts.push('<span class="chip c-no_mapping">无映射 ' + o.no_mapping + '</span>');
+  if(o.unexpected)   parts.push('<span class="chip c-unexpected">需复核 ' + o.unexpected + '</span>');
+  if(o.loadfail)     parts.push('<span class="chip c-loadfail">无法加载 ' + o.loadfail + '</span>');
+  if(o.pending)      parts.push('<span class="chip c-pending">读取中 ' + o.pending + '</span>');
+  if(extra)          parts.push(extra);
+  parts.push('<span class="muted" style="font-size:11.5px">共 ' + cpsLength + ' 个唯一码点</span>');
+  return parts.join("");
+}
+
+/* ---------------- 主渲染 ---------------- */
+function schedule(){ clearTimeout(STATE.timer); STATE.timer = setTimeout(render, 160); }
+
+function render(){
+  if(!STATE.manifest) return;
+  paintKPIs();
+  const text = $("#text").value || "";
+  const size = parseInt($("#size").value, 10) || 44;
+  $("#sizev").textContent = size + " px";
+  const sel = allFonts().filter(f => STATE.selected.has(f.id));
+  const cps = uniqueCps(text);
+  const showRef = $("#showRef").checked, tint = $("#tint").checked;
+
+  const results = new Map();
+  sel.forEach(f => { const m = new Map(); cps.forEach(cp => m.set(cp, diagnose(f, cp))); results.set(f.id, m); });
+  STATE.results = results;
+
+  /* --- 预览卡 --- */
+  $("#previews").innerHTML = sel.length === 0
+    ? '<p class="muted">尚未选择字体。</p>'
+    : sel.map(f => {
+        const st = STATE.status[f.id];
+        const srcTag = f.bundled ? "随站自带文件" : "本地导入文件";
+        const head = '<div class="pvhead"><span class="nm">' + esc(f.file) + '</span>' +
+          '<span class="tag">' + esc(ALIAS(f.id)) + '</span>' +
+          '<span class="tag">' + esc(f.family||"—") + ' / ' + esc(f.style||"—") + '</span>' +
+          '<span class="tag">' + esc((f.format||"?").toUpperCase()) + ' · ' + fmtSize(f.size) + '</span>' +
+          statusChip(st) +
+          '<span class="tag">' + srcTag + '</span>' +
+          cmapChip(f) + '</div>';
+
+        if(!isLoaded(st)){
+          const msg = st==="error"
+            ? '<div class="warn" style="margin:0"><b>该字体文件无法加载，下面显示的字形来自系统回退，不能视为该字体的字形</b>' +
+              esc(STATE.err[f.id]||"") + '</div>'
+            : '<p class="muted">读取中…</p>';
+          const fb = st==="error"
+            ? '<div class="pvbox" style="font-size:' + size + 'px">' + esc(text) + '</div>' +
+              '<div class="striplabel">↑ 这是浏览器默认回退的渲染结果（对照用）</div>'
+            : '';
+          return '<div class="pvcard">' + head + msg + fb + '</div>';
+        }
+
+        const nomapNote = (cmapState(f) !== "parsed")
+          ? '<div class="compatnote"><b>注意：这份导入文件的 cmap 未能在浏览器内解析。</b>' +
+            '它的映射维度一律记为「未解析」，判定只依据像素证据，并使用独立的判定码；' +
+            '页面自带清单里的码点数据<b>不会</b>被用到这里。<br>' +
+            (f._cmapError ? '原因：' + esc(f._cmapError) + '<br>' : '') +
+            (f._sha256 ? '文件 SHA-256：<span class="mono">' + esc(f._sha256.slice(0,32)) + '…</span>' : '') +
+            '</div>'
+          : '';
+
+        const box = '<div class="pvbox"><span class="str" style="font-family:\'' + ALIAS(f.id) +
+          '\', monospace; font-size:' + size + 'px">' + esc(text) + '</span></div>';
+        const refBox = showRef
+          ? '<div class="striplabel">浏览器回退渲染对照（用一个不存在的字体名绘制，即系统回退字形）</div>' +
+            '<div class="pvbox" style="opacity:.75"><span class="str" style="font-family:' + NONEXIST +
+            ', monospace; font-size:' + size + 'px">' + esc(text) + '</span></div>'
+          : '';
+        const strip = tint ? statusStrip(f, text, results.get(f.id)) : '';
+
+        const m = results.get(f.id);
+        const cnt = countVerdicts(m, cps);
+        const sum = '<div class="row" style="margin-top:8px">' +
+          verdictChips(cnt, cps.length,
+            '<span class="muted" style="font-size:11.5px">' +
+            (f.bundled ? '依据随站自带文件' : '依据本地导入文件·未上传') + '</span>') + '</div>';
+        return '<div class="pvcard">' + head + nomapNote + box + refBox + strip + sum + '</div>';
+      }).join("");
+
+  /* --- 码点表 --- */
+  paintCodepoints(sel, cps, results);
+  /* --- 差异汇总 --- */
+  paintDiff(sel, cps, results);
+  /* --- 原始诊断 --- */
+  paintRaw(sel, cps, results);
+}
+
+function statusStrip(f, text, m){
+  const cells = [];
+  for(const ch of text){
+    const cp = ch.codePointAt(0);
+    const v = m.get(cp) || {code:"pending"};
+    const t = META[v.code] ? META[v.code].short : v.code;
+    // 四层依据分开写进悬停提示：cmap / 加载 / 像素 / 置信度
+    const bits = [];
+    bits.push("cmap=" + (v.cmap === "has" ? "有映射" : (v.cmap === "none" ? "无映射" : "未解析/未知")));
+    bits.push("加载=" + ({ok:"已加载", fail:"失败", pending:"读取中"}[v.load] || "未知"));
+    bits.push("映射来源=" + ({bundled_dataset:"随站自带数据集", parsed_in_browser:"本页当场解析该文件", unparsed:"无法解析该格式"}[v.cmap_source] || "未知"));
+    if(v.pixel){
+      bits.push(v.pixel.applicable
+        ? ("像素差异 " + (v.pixel.diff_pixels < 0 ? "尺寸不同" : v.pixel.diff_pixels + " px") +
+           "（与回退" + (v.pixel.same ? "相同" : "不同") + "）")
+        : ("像素比对不适用" + (v.blank ? "·空白字符" : "·两边都无墨迹")));
+    }
+    if(v.ink) bits.push("墨点 本字体" + v.ink.test + " / 回退" + v.ink.fallback);
+    if(v.advance) bits.push("进宽 本字体" + v.advance.test + " / 回退" + v.advance.fallback +
+                            "（差 " + v.advance.diff + "px，不参与判定）");
+    bits.push("置信度=" + (CONF[v.confidence] ? CONF[v.confidence].label : "未知"));
+    if(v.ink_anomaly) bits.push("异常：本字体在空白码点上画出了墨点（不计入覆盖）");
+    cells.push('<span class="sc c-' + v.code + '" title="' + esc(hex(cp) + " " + blockName(cp) + "｜" + t + "｜" + bits.join(" · ")) + '">' +
+      esc(ch === "\n" ? "⏎" : (ch === "\t" ? "⇥" : ch)) + '<br><span class="mono" style="font-size:9.5px">' +
+      esc(hex(cp)) + '</span></span>');
+  }
+  return '<div class="striplabel">状态色带（逐字符；悬停查看码点与判定依据）</div><div class="strip">' + cells.join("") + '</div>';
+}
+
+function paintCodepoints(sel, cps, results){
+  const shown = cps.slice(0, MAX_MATRIX_CPS);
+  $("#cpinfo").textContent = "唯一码点 " + cps.length + " 个" +
+    (cps.length > MAX_MATRIX_CPS ? "（表格仅显示前 " + MAX_MATRIX_CPS + " 个）" : "");
+  let h = "<thead><tr><th>字符</th><th>码点</th><th>Unicode 区段</th><th>cmap 内合计</th>" +
+          sel.map(f => '<th>' + esc(f.id) + '<br><span class="muted">' + esc(f.file.slice(0,18)) + '</span></th>').join("") +
+          "<th>确定覆盖</th><th>空白·已定义</th><th>未能区分</th></tr></thead><tbody>";
+  shown.forEach(cp => {
+    const ch = safeChar(cp);
+    let inCmap = 0, unparsed = 0, cov = 0, blk = 0, same = 0;
+    sel.forEach(f => { const c = cmapHas(f, cp);
+      if(c === null) unparsed++; else if(c) inCmap++;
+      const v = (results.get(f.id).get(cp)||{});
+      if(v.code === "covered") cov++;
+      else if(v.code === "blank_mapped") blk++;
+      else if(v.code === "same_pixels") same++; });
+    h += "<tr><td class='glyph'>" + esc(ch === null ? "—" : (ch === "\n" ? "⏎" : (ch === "\t" ? "⇥" : ch))) + "</td>" +
+         "<td class='mono nowrap'>" + hex(cp) + "</td>" +
+         "<td>" + esc(blockName(cp) || "—") + "</td>" +
+         "<td>" + (inCmap ? inCmap + " / " + sel.length : '<span class="muted">0 / ' + sel.length + '</span>') +
+           (unparsed ? ' <span class="chip c-no_mapping">未解析 ' + unparsed + '</span>' : "") + "</td>" +
+         sel.map(f => {
+            const v = results.get(f.id).get(cp) || {code:"pending"};
+            const t = (META[v.code] ? META[v.code].label : v.code) +
+              "｜cmap=" + (v.cmap==="has"?"有":(v.cmap==="none"?"无":"未解析")) +
+              "｜映射来源=" + ({bundled_dataset:"随站数据集", parsed_in_browser:"本页当场解析", unparsed:"未解析"}[v.cmap_source]||"—") +
+              "｜置信度=" + (CONF[v.confidence] ? CONF[v.confidence].label : "未知") +
+              (v.ink_anomaly ? "｜异常：空白码点却画出墨点，不计入覆盖" : "");
+            return '<td class="cell"><span class="chip c-' + v.code + '" title="' + esc(t) + '">' +
+              esc(META[v.code] ? META[v.code].short : v.code) + '</span></td>';
+         }).join("") +
+         "<td class='mono'>" + (cov || '<span class="muted">0</span>') + "</td>" +
+         "<td class='mono'>" + (blk || '<span class="muted">0</span>') + "</td>" +
+         "<td class='mono'>" + (same || '<span class="muted">0</span>') + "</td></tr>";
+  });
+  $("#cptable").innerHTML = h + "</tbody>";
+}
+
+function paintDiff(sel, cps, results){
+  if(sel.length === 0 || cps.length === 0){ $("#diffsum").innerHTML = '<p class="muted">需要选择字体并输入文字。</p>'; return; }
+  const covered = new Map(); cps.forEach(cp => covered.set(cp, []));
+  sel.forEach(f => {
+    const m = results.get(f.id);
+    cps.forEach(cp => { if((m.get(cp)||{}).code === "covered") covered.get(cp).push(f); });
+  });
+  const uniqSets = new Map(sel.map(f => [f.id, []]));
+  let disputed = [];
+  cps.forEach(cp => {
+    const arr = covered.get(cp);
+    if(arr.length > 0 && arr.length < sel.length){
+      if(arr.length === 1) uniqSets.get(arr[0].id).push(cp);
+      disputed.push(cp);
+    }
+  });
+  // 「未能区分」「空白字符」单独统计，绝不并入覆盖或未覆盖的任何一边
+  const anySame = cps.filter(cp => sel.some(f => (results.get(f.id).get(cp)||{}).code === "same_pixels"));
+  const anomaly = cps.reduce((n, cp) =>
+    n + sel.filter(f => (results.get(f.id).get(cp)||{}).ink_anomaly).length, 0);
+  let h = '<div class="row">' +
+    '<span class="chip c-covered">所选字体全部确定覆盖：' + cps.filter(cp => covered.get(cp).length === sel.length).length + '</span>' +
+    '<span class="chip c-covered">覆盖不一致：' + disputed.length + '</span>' +
+    '<span class="chip c-no_mapping">无任何确定覆盖：' + cps.filter(cp => covered.get(cp).length === 0).length + '</span>' +
+    '<span class="chip c-same_pixels">其中含「未能区分」：' + anySame.length + '</span>' +
+    '<span class="chip c-blank_mapped">空白字符（按语义处理）：' +
+      cps.filter(cp => isWhitespaceCp(cp) || isZeroWidthCp(cp)).length + '</span>' +
+    (anomaly ? '<span class="chip c-unexpected">空白位图异常：' + anomaly + '</span>' : '') +
+    '</div>' +
+    '<p class="muted" style="font-size:11.5px;margin:6px 0 0">' +
+    '「确定覆盖」只统计像素证据成立的码点；「未能区分」表示像素与回退相同，证据不足以区分，' +
+    '既不计入覆盖也不计入未覆盖；空白字符像素比对不适用，单独按语义列出；' +
+    '「空白位图异常」指某字体在空白码点上却画出了墨点（源文件位图数据异常），同样不计入覆盖。</p>';
+
+  h += '<h3 style="font-size:13px;margin:12px 0 6px">各字体在本段文字中的判定分布（四个维度分开统计）</h3>';
+  h += '<table><thead><tr><th>字体</th><th>确定覆盖</th><th>占比</th><th>空白·已定义</th><th>未能区分</th><th>无可见字形</th><th>无映射</th><th>映射未解析时的判定</th><th>加载 / 来源</th><th>独有确定覆盖</th></tr></thead><tbody>';
+  sel.forEach(f => {
+    const m = results.get(f.id);
+    const o = countVerdicts(m, cps);
+    const own = uniqSets.get(f.id);
+    const st = STATE.status[f.id];
+    const src = f.bundled ? ' <span class="tag">随站自带</span>'
+              : ' <span class="tag" style="border-color:#b6e3ff;color:#0969da">本地导入·未上传</span>';
+    const nomap = [];
+    if(o.covered_nomap) nomap.push('<span class="chip c-covered_nomap">覆盖 ' + o.covered_nomap + '</span>');
+    if(o.blank_nomap)   nomap.push('<span class="chip c-blank_nomap">空白 ' + o.blank_nomap + '</span>');
+    if(o.noink_nomap)   nomap.push('<span class="chip c-noink_nomap">无可见字形 ' + o.noink_nomap + '</span>');
+    h += "<tr><td>" + esc(f.file) + "</td>" +
+      "<td class='mono'>" + o.covered + " / " + cps.length + "</td>" +
+      "<td class='mono'>" + (cps.length ? (o.covered*100/cps.length).toFixed(1) : "0.0") + "%</td>" +
+      "<td class='mono'>" + o.blank_mapped +
+        (o.ink_anomaly ? ' <span class="chip c-unexpected" title="该字体在空白码点上画出了墨点，属源文件位图异常，不计入覆盖">异常 ' + o.ink_anomaly + '</span>' : "") + "</td>" +
+      "<td class='mono'>" + o.same_pixels + "</td>" +
+      "<td class='mono'>" + o.no_ink + "</td>" +
+      "<td class='mono'>" + o.no_mapping + (o.unexpected ? ' <span class="chip c-unexpected">需复核 ' + o.unexpected + '</span>' : '') + "</td>" +
+      "<td>" + (nomap.length ? nomap.join(" ") : '<span class="muted">—</span>') + "</td>" +
+      "<td>" + statusChip(st) + src + "</td>" +
+      "<td>" + (own.length ? '<span class="mono">' + own.slice(0,14).map(c => hex(c)).join(" ") +
+        (own.length > 14 ? " …共" + own.length + "个" : "") + "</span>" : '<span class="muted">—</span>') + "</td></tr>";
+  });
+  h += "</tbody></table>";
+
+  if(disputed.length){
+    h += '<h3 style="font-size:13px;margin:14px 0 6px">确定覆盖不一致的码点明细</h3>' +
+      '<table><thead><tr><th>字符</th><th>码点</th><th>区段</th><th>确定覆盖的字体</th><th>其余字体的判定（不当作「不覆盖」）</th></tr></thead><tbody>';
+    disputed.slice(0, 120).forEach(cp => {
+      const yes = covered.get(cp), no = sel.filter(f => !yes.includes(f));
+      h += "<tr><td class='glyph'>" + esc(safeChar(cp) || "—") + "</td><td class='mono'>" + hex(cp) + "</td>" +
+        "<td>" + esc(blockName(cp) || "—") + "</td>" +
+        "<td>" + yes.map(f => esc(f.file)).join("<br>") + "</td>" +
+        "<td>" + no.map(f => { const v = results.get(f.id).get(cp) || {code:"pending"};
+            return esc(f.file) + ' <span class="chip c-' + v.code + '">' +
+              esc(META[v.code] ? META[v.code].short : v.code) + '</span>'; }).join("<br>") + "</td></tr>";
+    });
+    h += "</tbody></table>";
+    if(disputed.length > 120) h += '<p class="muted">仅显示前 120 个。</p>';
+  }
+  $("#diffsum").innerHTML = h;
+}
+
+function paintRaw(sel, cps, results){
+  const lines = [];
+  sel.forEach(f => {
+    lines.push("### " + f.rel + "  [" + (STATE.status[f.id]||"idle") + "]");
+    if(STATE.status[f.id] === "error") lines.push("    加载错误: " + (STATE.err[f.id]||""));
+    cps.forEach(cp => {
+      const v = results.get(f.id).get(cp) || {code:"pending"};
+      // 四层依据分行标注，绝不把「像素相同」写成「不覆盖」或「空字形」
+      lines.push("  " + hex(cp) +
+        "  cmap=" + (v.cmap === "has" ? "有映射" : (v.cmap === "none" ? "无映射" : "未解析")) +
+        "  加载=" + ({ok:"已加载", fail:"失败", pending:"读取中"}[v.load] || "未知") +
+        "  映射来源=" + ({bundled_dataset:"随站自带数据集", parsed_in_browser:"本页当场解析该文件", unparsed:"该格式无法在浏览器内解析"}[v.cmap_source] || "未知") +
+        "  像素=" + (v.pixel
+            ? (v.pixel.applicable
+                ? ((v.pixel.diff_pixels < 0 ? "尺寸不同" : "差异 " + v.pixel.diff_pixels + " px") +
+                   "（与回退" + (v.pixel.same ? "相同" : "不同") + "）")
+                : "比对不适用" + (v.blank ? "（空白字符）" : "（两边都无墨迹）"))
+            : "—") +
+        "  置信度=" + (CONF[v.confidence] ? CONF[v.confidence].label : "未知") +
+        "  判定=" + META[v.code].label +
+        (v.ink ? "  墨点(本字体/回退)=" + v.ink.test + "/" + v.ink.fallback : "") +
+        (v.advance ? "  进宽(本字体/回退)=" + v.advance.test + "/" + v.advance.fallback +
+            " 差=" + v.advance.diff + "px（不参与判定）" : "") +
+        (v.ink_anomaly ? "  [空白位图异常：本字体在空白码点上画出了墨点]" : ""));
+    });
+    lines.push("");
+  });
+  $("#rawdiag").textContent = lines.join("\n") || "（无）";
+  $("#diaginfo").textContent = "共 " + (sel.length * cps.length) + " 条判定记录";
+}
+
+/* ---------------- 本地字体导入：全部在浏览器内完成，不上传 ---------------- */
+const WOFF2_MSG = "WOFF2 的字体表用 Brotli 压缩，浏览器未提供 Brotli 解压接口，本页无法在浏览器内解析它的 cmap";
+
+function u16(d,o){ return (d[o]<<8)|d[o+1]; }
+function u32(d,o){ return ((d[o]<<24)|(d[o+1]<<16)|(d[o+2]<<8)|d[o+3])>>>0; }
+function tag4(d,o){ return String.fromCharCode(d[o],d[o+1],d[o+2],d[o+3]); }
+function sniffFormat(buf){
+  if(buf.byteLength < 4) return "unknown";
+  const d = new Uint8Array(buf, 0, 4);
+  const s = tag4(d,0);
+  if(s === "\u0000\u0001\u0000\u0000" || s === "true") return "ttf";
+  if(s === "OTTO") return "otf";
+  if(s === "ttcf") return "ttc";
+  if(s === "wOFF") return "woff";
+  if(s === "wOF2") return "woff2";
+  return "unknown";
+}
+function readTableDir(d, base){
+  const numTables = u16(d, base+4), out = {};
+  for(let i=0;i<numTables;i++){
+    const o = base + 12 + i*16;
+    out[tag4(d,o)] = {offset: u32(d,o+8), length: u32(d,o+12)};
+  }
+  return out;
+}
+async function sfntTables(buf){
+  const d = new Uint8Array(buf);
+  let base = 0;
+  if(d.length >= 4 && tag4(d,0) === "ttcf"){
+    if(d.length < 16) throw new Error("TTC 头部不完整");
+    base = u32(d, 12);                       // 取集合里的第 0 个字体
+  }
+  const dir = readTableDir(d, base), tables = {};
+  for(const k in dir){
+    const t = dir[k];
+    if(t.offset + t.length > d.length) throw new Error("表 " + k + " 越界，文件可能已损坏");
+    tables[k] = d.subarray(t.offset, t.offset + t.length);
+  }
+  return tables;
+}
+async function woffTables(buf){
+  const d = new Uint8Array(buf);
+  if(d.length < 44) throw new Error("WOFF 头部不完整");
+  const numTables = u16(d,12), tables = {};
+  let inflated = 0;
+  for(let i=0;i<numTables;i++){
+    const o = 44 + i*20;
+    const tag = tag4(d,o), off = u32(d,o+4), comp = u32(d,o+8), orig = u32(d,o+12);
+    if(off + comp > d.length) throw new Error("表 " + tag + " 越界");
+    let bytes = d.subarray(off, off+comp);
+    if(comp < orig){
+      inflated++;
+      const ds = new DecompressionStream("deflate");    // WOFF1 的表用 zlib 压缩
+      const ab = await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+      bytes = new Uint8Array(ab);
+    }
+    tables[tag] = bytes;
+  }
+  if(!inflated) tables.__note__ = new Uint8Array(0);
+  return tables;
+}
+// 只读这份文件自己的 cmap；与随站清单完全无关
+function readCmapSubtable(b, off){
+  const fmt = u16(b, off), set = new Set();
+  if(fmt === 0){
+    const len = u16(b, off+2);
+    for(let i=0;i<Math.min(256, Math.max(0, len-6));i++){ if(b[off+6+i]) set.add(i); }
+  } else if(fmt === 4){
+    const segX2 = u16(b, off+6), segs = segX2>>1;
+    const endO = off+14, startO = endO + segX2 + 2, deltaO = startO + segX2, rangeO = deltaO + segX2;
+    if(rangeO + segX2 > b.length) throw new Error("cmap format 4 子表长度越界（该子表声明的长度比实际需要长）");
+    for(let s=0;s<segs;s++){
+      const end = u16(b, endO+s*2), start = u16(b, startO+s*2);
+      const delta = (b[deltaO+s*2]<<8) | b[deltaO+s*2+1];
+      const ro = u16(b, rangeO+s*2);
+      if(start > end || start === 0xFFFF) continue;
+      for(let c=start;c<=end;c++){
+        let g;
+        if(ro === 0) g = (c + delta) & 0xFFFF;
+        else{
+          const gi = rangeO + s*2 + ro + (c-start)*2;
+          if(gi+1 >= b.length) continue;
+          g = u16(b, gi);
+          if(g) g = (g + delta) & 0xFFFF;
+        }
+        if(g) set.add(c);
+      }
+    }
+  } else if(fmt === 6){
+    const first = u16(b, off+6), cnt = u16(b, off+8);
+    for(let i=0;i<cnt;i++){ if(u16(b, off+10+i*2)) set.add(first+i); }
+  } else if(fmt === 12 || fmt === 13){
+    const ngroups = u32(b, off+12);
+    if(off + 16 + ngroups*12 > b.length) throw new Error("cmap format " + fmt + " 子表长度越界");
+    for(let i=0;i<ngroups;i++){
+      const o = off + 16 + i*12;
+      const sc = u32(b,o), ec = u32(b,o+4), gid = u32(b,o+8);
+      if(sc > ec || ec > 0x10FFFF) continue;
+      if(fmt === 13){ if(gid) for(let c=sc;c<=ec;c++) set.add(c); }
+      else { for(let c=sc;c<=ec;c++){ if((gid + (c-sc)) & 0xFFFFFFFF) set.add(c); } }
+      if(set.size > 3000000) throw new Error("cmap 解析出的码点数异常，已中止");
+    }
+  } else {
+    throw new Error("cmap 子表格式 " + fmt + " 未被本页解析器支持");
+  }
+  return set;
+}
+function parseCmapTable(tbl){
+  if(!tbl) throw new Error("这份文件里没有 cmap 表");
+  const n = u16(tbl, 2), subs = [];
+  for(let i=0;i<n;i++){
+    const o = 4 + i*8;
+    subs.push({platform:u16(tbl,o), encoding:u16(tbl,o+2), offset:u32(tbl,o+4)});
+  }
+  // 与浏览器/消毒器的偏好一致：优先 (3,10) → (3,1) → (0,*)
+  const uni = subs.filter(s => s.platform === 0 || (s.platform === 3 && (s.encoding === 1 || s.encoding === 10)));
+  if(!uni.length) throw new Error("cmap 里没有 Unicode 子表");
+  const rank = s => (s.platform===3 && s.encoding===10) ? 40 :
+                    (s.platform===3 && s.encoding===1)  ? 30 : (10 + s.encoding);
+  uni.sort((a,b)=> rank(b)-rank(a));
+  const best = uni[0];
+  const cps = readCmapSubtable(tbl, best.offset);
+  return {cps:cps, subtable:{platform:best.platform, encoding:best.encoding, format:u16(tbl,best.offset)},
+          subtable_count:subs.length};
+}
+function rangesFromSet(set){
+  const arr = Array.from(set).sort((a,b)=>a-b), out = [];
+  let s = null, p = null;
+  for(const c of arr){
+    if(s === null){ s = p = c; }
+    else if(c === p+1){ p = c; }
+    else { out.push([s,p]); s = p = c; }
+  }
+  if(s !== null) out.push([s,p]);
+  return out;
+}
+function parseNameTable(tbl){
+  if(!tbl || u16(tbl,0) !== 0) return {};
+  const count = u16(tbl,2), strOff = u16(tbl,4), recs = [];
+  for(let i=0;i<count;i++){
+    const o = 6 + i*12;
+    recs.push({p:u16(tbl,o), e:u16(tbl,o+2), id:u16(tbl,o+6), len:u16(tbl,o+8), off:u16(tbl,o+10)});
+  }
+  const pick = id => {
+    const c = recs.filter(r => r.id === id && (r.p === 3 || r.p === 0 || r.p === 1));
+    const pref = r => (r.p===3 && r.e===1) ? 3 : (r.p===0 ? 2 : (r.p===3 ? 1 : 0));
+    c.sort((a,b)=> pref(b)-pref(a));
+    if(!c.length) return "";
+    const r = c[0];
+    const raw = tbl.subarray(strOff + r.off, strOff + r.off + r.len);
+    try{
+      return (r.p === 1) ? new TextDecoder("windows-1252").decode(raw)
+                         : new TextDecoder("utf-16be").decode(raw);
+    }catch(e){ return ""; }
+  };
+  return {family:(pick(16) || pick(1)), style:(pick(17) || pick(2))};
+}
+
+async function addImportedFiles(fileListIn){
+  const files = Array.from(fileListIn || []);
+  for(const file of files){
+    let buf;
+    try{ buf = await file.arrayBuffer(); }
+    catch(e){ continue; }
+    const id = "imp" + (++STATE.impseq);
+    const item = {
+      id:id, file:file.name, rel:"本地导入/" + file.name, size:file.size,
+      format:sniffFormat(buf), family:"", style:"",
+      license:"本地文件（本站不提供、不判断其许可）", bundled:false,
+      note:"本地导入：仅在你的浏览器内读取与解析，未上传",
+      _file:file, _ranges:null, _cmapParsed:false, _cmapCount:0, _cmapError:"",
+      _subtable:null, _sha256:"", _tables:""
+    };
+    STATE.imported.push(item);
+    STATE.selected.add(id);
+    renderImported(); paintList(); paintKPIs();
+    await processImported(item, buf);
+    renderImported(); paintList(); paintKPIs();
+    schedule();
+  }
+}
+async function processImported(item, buf){
+  // 1) 本地算 SHA-256（不联网；crypto.subtle 需要安全上下文）
+  try{
+    if(window.crypto && window.crypto.subtle){
+      const h = await window.crypto.subtle.digest("SHA-256", buf);
+      item._sha256 = Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+  }catch(e){ item._sha256 = ""; }
+
+  // 2) 当场解析这份文件的 cmap。绝不查随站清单。
+  try{
+    let tables;
+    if(item.format === "woff2") throw new Error(WOFF2_MSG);
+    if(item.format === "unknown") throw new Error("文件头不是已知的字体格式（不是 TTF / OTF / TTC / WOFF / WOFF2）");
+    tables = (item.format === "woff") ? await woffTables(buf) : await sfntTables(buf);
+    const r = parseCmapTable(tables["cmap"]);
+    item._ranges = rangesFromSet(r.cps);
+    item._cmapCount = r.cps.size;
+    item._cmapParsed = true;
+    item._cmapError = "";
+    item._subtable = r.subtable;
+    item._tables = Object.keys(tables).filter(k => k !== "__note__").sort().join(" ");
+    const nm = parseNameTable(tables["name"]);
+    if(nm.family) item.family = nm.family;
+    if(nm.style) item.style = nm.style;
+  }catch(e){
+    item._cmapParsed = false;
+    item._cmapCount = 0;
+    item._ranges = null;
+    item._cmapError = (e && e.message) || String(e);
+  }
+
+  // 3) 交给浏览器加载：与自带字体同一条路径（先有字节，再 FontFace）
+  STATE.status[item.id] = "loading"; renderImported(); paintList();
+  try{
+    STATE.ff[item.id] = await registerFace(ALIAS(item.id), buf);
+    STATE.status[item.id] = "loaded";
+    STATE.src[item.id] = "imported";
+  }catch(e){
+    STATE.err[item.id] = errText(e);
+    STATE.status[item.id] = "error";
+  }
+  dropCacheFor(item.id);
+}
+function renderImported(){
+  const imp = STATE.imported;
+  $("#impinfo").textContent = imp.length
+    ? ("已导入 " + imp.length + " 个本地文件；全部只在本机浏览器内读取与解析，未上传。")
+    : "尚未导入任何本地字体文件。";
+  if(!imp.length){ $("#implist").innerHTML = ""; return; }
+  let h = '<table><thead><tr><th>文件</th><th>大小</th><th>格式</th><th>家族 / 样式</th>' +
+          '<th>cmap 映射（当场解析这份文件）</th><th>浏览器加载</th><th>SHA-256</th><th></th></tr></thead><tbody>';
+  imp.forEach(f => {
+    const st = STATE.status[f.id] || "idle";
+    const cm = f._cmapParsed
+      ? '<span class="chip c-blank_mapped">已解析 ' + f._cmapCount.toLocaleString() + ' 个码点</span>' +
+        (f._subtable ? ' <span class="muted mono">子表 (' + f._subtable.platform + ',' + f._subtable.encoding +
+          ') 格式 ' + f._subtable.format + '</span>' : "")
+      : '<span class="chip c-no_mapping">映射未解析</span> <span class="muted">' + esc(f._cmapError) + '</span>';
+    h += '<tr>' +
+      '<td class="mono">' + esc(f.file) + '</td>' +
+      '<td class="mono nowrap">' + fmtSize(f.size) + '</td>' +
+      '<td class="mono">' + esc(f.format) + '</td>' +
+      '<td>' + esc(f.family || "—") + ' / ' + esc(f.style || "—") + '</td>' +
+      '<td>' + cm + '</td>' +
+      '<td>' + (st === "error"
+                 ? '<span class="badmark">失败</span> <span class="muted">' + esc(STATE.err[f.id] || "") + '</span>'
+                 : (st === "loading" ? "读取中…" : (st === "loaded" ? '<span class="okmark">已加载</span>' : "未加载"))) + '</td>' +
+      '<td class="hash">' + (f._sha256 ? esc(f._sha256.slice(0,16)) + "…" : '<span class="muted">不可用</span>') + '</td>' +
+      '<td><button data-imp-remove="' + f.id + '">移除</button></td></tr>';
+  });
+  $("#implist").innerHTML = h + '</tbody></table>' +
+    '<p class="muted" style="font-size:11.5px;margin:6px 0 0">「已解析 … 个码点」是这份文件的 cmap 当场解析出来的结果，' +
+    '与页面自带清单无关；同一份文件用自带清单里的同名条目导入，也会作为独立条目单独解析、单独计数。</p>';
+}
+function removeImported(id){
+  const i = STATE.imported.findIndex(f => f.id === id);
+  if(i < 0) return;
+  STATE.imported.splice(i, 1);
+  STATE.selected.delete(id);
+  delete STATE.ff[id]; delete STATE.status[id]; delete STATE.err[id]; delete STATE.src[id];
+  dropCacheFor(id);
+  renderImported(); paintList(); paintKPIs(); schedule();
+}
+
+/* ---------------- 交互 ---------------- */
+function onListClick(e){
+  const cb = e.target.closest('input[type=checkbox]');
+  if(!cb) return;
+  const id = cb.dataset.id;
+  if(cb.checked) STATE.selected.add(id); else STATE.selected.delete(id);
+  paintList();
+  const f = findFont(id);
+  if(cb.checked && f && STATE.status[id] !== "loaded"){ ensureFont(f).then(schedule); }
+  schedule();
+}
+
+function bind(){
+  document.addEventListener("change", e => {
+    if(e.target.matches('#fontlist input[type=checkbox]')) onListClick(e);
+  });
+  document.addEventListener("click", e => {
+    const b = e.target.closest('[data-imp-remove]');
+    if(b) removeImported(b.dataset.impRemove);
+  });
+  $("#q").addEventListener("input", paintList);
+  $("#text").addEventListener("input", () => { clearCache(); schedule(); });
+  $("#size").addEventListener("input", () => { $("#sizev").textContent = $("#size").value + " px"; schedule(); });
+  $("#showRef").addEventListener("change", schedule);
+  $("#tint").addEventListener("change", schedule);
+
+  // 本地导入：文件只在浏览器里被读取，页面不发起任何上传请求
+  $("#impfiles").addEventListener("change", e => {
+    addImportedFiles(e.target.files);
+    e.target.value = "";             // 允许再次选择同一个文件
+  });
+  const zone = $("#impzone");
+  ["dragenter","dragover"].forEach(t => zone.addEventListener(t, e => { e.preventDefault(); zone.classList.add("over"); }));
+  ["dragleave","drop"].forEach(t => zone.addEventListener(t, e => { e.preventDefault(); zone.classList.remove("over"); }));
+  zone.addEventListener("drop", e => {
+    const dt = e.dataTransfer;
+    if(dt && dt.files && dt.files.length) addImportedFiles(dt.files);
+  });
+  $("#btnImpClear").addEventListener("click", () => {
+    STATE.imported.slice().forEach(f => removeImported(f.id));
+  });
+
+  $("#btnVerify3").addEventListener("click", async () => {
+    STATE.selected.clear();
+    STATE.manifest.fonts.filter(f => /Gentium-Regular\.ttf$/.test(f.file) ||
+      /unifont-17\.0\.04\.otf$/.test(f.file) || /NotoSansCuneiform-Regular\.ttf$/.test(f.file))
+      .forEach(f => STATE.selected.add(f.id));
+    paintList(); await ensureSelected(); clearCache(); schedule();
+  });
+  $("#btnLight").addEventListener("click", async () => {
+    STATE.selected.clear();
+    allFonts().filter(f => f.size <= 2*1024*1024).forEach(f => STATE.selected.add(f.id));
+    paintList(); await ensureSelected(); clearCache(); schedule();
+  });
+  $("#btnAll").addEventListener("click", async () => {
+    const n = allFonts().length, mb = allFonts().reduce((s,f)=>s+f.size,0)/1048576;
+    if(!confirm("将加载全部 " + n + " 个字体文件（合计约 " + mb.toFixed(1) + " MB），内存占用较高。继续？")) return;
+    allFonts().forEach(f => STATE.selected.add(f.id));
+    paintList(); await ensureSelected(); clearCache(); schedule();
+  });
+  $("#btnNone").addEventListener("click", () => { STATE.selected.clear(); paintList(); clearCache(); schedule(); });
+  $("#btnReload").addEventListener("click", async () => {
+    allFonts().forEach(f => { if(STATE.selected.has(f.id)) resetFontState(f.id); });
+    clearCache(); paintList(); await ensureSelected(); schedule();
+  });
+
+  const setText = t => { $("#text").value = t; clearCache(); schedule(); };
+  $("#btnSampleLatin").addEventListener("click", () => setText("AaBbCc 0123 (→ ✓ ∑ ℕ) ﬁfl"));
+  $("#btnSampleCJK").addEventListener("click", () => setText("汉字假名與简体 一丁丂 ﾊﾟ 㐀 丁"));
+  $("#btnSampleAstral").addEventListener("click", () => setText("𒀀 𓀀 𐀀 𝔸 𞸀 𠀀 𡈽 𪛀"));
+  $("#btnSampleEmoji").addEventListener("click", () => setText("😀 🍎 ⚙️ ❤️ 😀"));
+  $("#btnClear").addEventListener("click", () => setText(""));
+
+  $("#btnDiag").addEventListener("click", () => {
+    const text = $("#text").value || "", cps = uniqueCps(text);
+    const sel = allFonts().filter(f => STATE.selected.has(f.id));
+    const out = {generated_at:new Date().toISOString(), text:text, detect_size:STATE.detSize,
+      note:"四个维度分开记录：cmap=映射（自带字体解析自同一份文件；本地导入字体由本页当场解析该文件）/ load=文件加载 / " +
+           "pixel=像素比对结果与可比性 / confidence=该结论的置信度。" +
+           "verdict 取值：covered=本字体覆盖（确定）/ blank_mapped=空白字符·字体已定义（语义）/ no_ink=有映射但描不出可见字形 / " +
+           "same_pixels=像素与回退相同·未能区分（不下结论）/ no_mapping=cmap 无映射（浏览器回退）/ loadfail=字体文件无法加载 / " +
+           "unexpected=需复核；另有三个只在「本地导入字体映射未解析」时使用的独立判定码：covered_nomap / blank_nomap / noink_nomap。" +
+           "pixel.same=true 只表示无法区分，不代表该字体不覆盖，也不代表空字形。advance 仅作补充数据显示，不参与判定。" +
+           "空白/零宽/控制字符一律只按 cmap 语义判定，绝不使用像素证据；此类码点的 pixel.applicable 为 false。此类码点的 " +
+           "ink_anomaly=true 表示该字体在空白码点上画出了墨点（源文件位图数据异常），单独标注、不计入覆盖。" +
+           "cmap_source=bundled_dataset 表示映射取自随站自带数据集（该数据集解析自同一份文件）；" +
+           "cmap_source=parsed_in_browser 表示刚刚在浏览器内解析了这份本地文件；cmap_source=unparsed 表示该格式无法在浏览器内解析（映射未知，不是「无映射」）。" +
+           "本地导入字体只在本机浏览器内读取与解析，本次导出不会、也没有上传任何文件。",
+      public_fonts_note:"随站公开的字体文件全部为许可证据明确、允许再分发的原文件，未做任何修改；许可与署名见 licenses.html。",
+      fonts: sel.map(f => ({
+        file:f.file, rel:f.rel, family:f.family, style:f.style, format:f.format,
+        bundled: !!f.bundled,
+        load_status: STATE.status[f.id] || "idle", load_error: STATE.err[f.id] || null,
+        render_source: STATE.src[f.id] || null,
+        cmap_parsed: (cmapState(f) === "parsed"),
+        cmap_source: (f.bundled ? "bundled_dataset" : (f._cmapParsed ? "parsed_in_browser" : "unparsed")),
+        cmap_count: (f.bundled ? f.cps : (f._cmapParsed ? f._cmapCount : null)),
+        cmap_subtable: (f.bundled ? null : (f._subtable || null)),
+        cmap_parse_error: (f.bundled ? null : (f._cmapParsed ? null : (f._cmapError || null))),
+        sha256: (f.bundled ? f.sha256 : (f._sha256 || null)),
+        license: f.license || null,
+        detail: cps.map(cp => { const v = (STATE.results.get(f.id)||new Map()).get(cp) || {code:"pending"};
+          return {cp:hex(cp), block:blockName(cp),
+                  cmap:(v.cmap === undefined ? "unknown" : v.cmap),
+                  cmap_source:(v.cmap_source || null),
+                  load:(v.load || "pending"),
+                  pixel:(v.pixel ? {applicable:v.pixel.applicable, same:v.pixel.same,
+                                    differs:v.pixel.differs, diff_pixels:v.pixel.diff_pixels,
+                                    ratio:v.pixel.ratio} : null),
+                  ink:(v.ink || null),
+                  advance:(v.advance || null),
+                  blank: !!v.blank,
+                  blank_kind:(v.blank_kind || null),
+                  ink_anomaly: !!v.ink_anomaly,
+                  advance_support:(v.advance_support === undefined ? null : !!v.advance_support),
+                  verdict:v.code,
+                  verdict_label:(META[v.code] ? META[v.code].label : v.code),
+                  confidence:(v.confidence || "unknown"),
+                  note:(v.note || "")}; })
+      }))};
+    const blob = new Blob([JSON.stringify(out, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "字体实验台_判定结果.json"; a.click();
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => { bind(); boot(); });
+</script>
+</body>
+</html>

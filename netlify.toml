@@ -1,0 +1,20 @@
+# Netlify 静态站点配置：站点根目录就是本目录，没有任何构建步骤。
+[build]
+  publish = "."
+
+# 字体文件是原样分发的二进制；给一个温和的缓存时间，
+# 更新发布后浏览器最多 1 天会拿到新文件。
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=600"
+
+[[headers]]
+  for = "/licenses/*"
+  [headers.values]
+    Cache-Control = "public, max-age=600"
