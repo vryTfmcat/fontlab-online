@@ -1,60 +1,126 @@
-# 更新与部署说明
+# 在线字体实验台 · FontLab Online
 
-在线字体实验台 · 逐字体覆盖比较 + 浏览器内本地字体导入。
+**不安装字体，比较 Unicode 字符在不同字体中的字形、字符映射与浏览器加载情况。**
 
-- 线上地址：https://fontlab-online.netlify.app
-- 源码仓库：https://github.com/vryTfmcat/fontlab-online
-- 许可与署名：https://fontlab-online.netlify.app/licenses.html
+[立即使用](https://fontlab-online.netlify.app/) · [English guide](README.en.md) · [字体许可与署名](https://fontlab-online.netlify.app/licenses.html) · [反馈问题](https://github.com/vryTfmcat/fontlab-online/issues)
 
-纯静态站点：没有构建步骤、没有后端、没有依赖安装。
+FontLab Online is a browser-based Unicode font comparison tool with local font import. Compare glyphs, inspect character mappings, and distinguish font loading from rendering evidence—without installing fonts.
 
-## 目录
+## 适合什么时候用
+
+- **特殊字符显示不对**：输入音标、生僻字或数学符号，比较不同字体的显示，查看是否存在字符映射或加载失败。
+- **为多语言笔记挑字体**：并排查看中日韩文字、IPA 音标、古文字和其他 Unicode 字符的字形。
+- **先试字体再安装**：选择本机字体文件，在浏览器里预览，不修改系统或 Obsidian 配置。
+- **区分映射与实际渲染**：字体声明包含某个字符，不等于浏览器能成功加载或画出可见字形。
+
+例如，可以试着输入：
+
+```text
+汉字 仮名 𒀀 𝔸 → ✓ ∑
+ɑ ɛ ə ʃ ʒ ŋ sœk˧
+A À À
+```
+
+最后一行包含预组合字符与组合序列；页面会列出各个码点。组合序列的完整排版效果仍需要在目标应用中确认。
+
+## 三步开始
+
+1. 打开 **[在线字体实验台](https://fontlab-online.netlify.app/)**，在“输入文字”里粘贴自己的字符，或使用样例按钮。
+2. 勾选需要比较的字体，调节字号，查看逐字体预览、浏览器回退对照和码点表。
+3. 需要测试自己的文件时，在“本地导入字体”中选择文件或拖入文件。需要保留结果时，点击“导出本次判定结果 JSON”。
+
+网站自带 **12 个字体文件**，包括 Gentium 的不同样式与格式、Noto Sans Symbols2、Noto Sans Cuneiform、Unifont 和 Unifont Upper。它们不是 12 个不同字体家族；同名的 TTF 与 WOFF2 分开列出。**勾选后才加载对应字体文件。**
+
+无需账号，也无需安装字体或运行本地服务。当前界面为中文；英文用户可参照 [English guide](README.en.md) 中的按钮对照。
+
+## 怎么理解结果
+
+页面分别显示四件事：**cmap 字符映射、文件加载、像素差异、判定置信度**。
+
+| 页面结果 | 可以怎样理解 |
+| --- | --- |
+| 本字体覆盖（确定） | 有字符映射，且当前样本的绘制与回退对照不同，有来自该字体的渲染证据。 |
+| 空白字符·字体已定义 | 空格等字符单独按映射处理，不要求它画出可见墨迹，也不混入可见字形覆盖统计。 |
+| 像素与回退相同·未能区分 | 证据不足；不能据此认定字体不支持，也不能认定它提供了可见字形。 |
+| cmap 无映射 | 解析出的映射表没有该码点。看到字符并不等于该字体支持它。 |
+| 有映射但描不出可见字形 | 存在映射，但当前绘制没有产生可见字形；与“没有映射”分开记录。 |
+| 字体文件无法加载 | 浏览器无法接受或读取文件，不把系统回退显示当作加载成功。 |
+| 映射未解析 | 当前格式的映射未被解析，不能把“未知”当成“无映射”。 |
+
+自带字体使用与文件配套的预解析数据；本地导入文件独立解析，**不会借用同名自带字体的覆盖清单**。导出结果也会标明来源。
+
+## 本地导入、隐私与限制
+
+- 文件选择器接受 **TTF / OTF / TTC / WOFF / WOFF2**；能否解析与渲染取决于文件和浏览器。文件读取、解析、哈希及预览在浏览器内完成；应用没有上传字体的接口。
+- **本地导入 WOFF2 目前只能预览与比较像素，不能解析 cmap**，页面明确显示“映射未解析”。需要字符映射时，优先使用可解析的 TTF / OTF。网站自带 WOFF2 有配套预解析数据，不受这一导入限制。
+- 浏览器可能拒绝结构不兼容的字体；网页版不会自动修复它，也不会自动替换为兼容副本。
+- 比较以**单个 Unicode 码点和当前浏览器渲染**为单位，不是完整的组合字符、连字、复杂文字塑形或跨浏览器排版测试。
+- 这不是扫描其他网站并识别其实际字体的工具，也不是图片字体识别工具。
+- 导出 JSON 包含输入文字、文件名和诊断结果；分享导出文件前，请先检查是否包含不想公开的内容。
+- 网站本身仍需联网获取页面和勾选的自带字体；“本地导入”表示所选字体文件不上传，不代表整站离线运行。
+
+## 字体许可
+
+随站字体原样分发，逐文件许可、版权声明和许可正文见 **[许可与署名](https://fontlab-online.netlify.app/licenses.html)** 及仓库中的 [licenses/](licenses/)。
+
+部分原始字体与兼容副本未随站公开。导入自己的文件不等于获得再分发许可；本站不替用户判断导入文件的授权。字体许可适用于对应字体文件，不应自动套用于本仓库的应用代码。
+
+## 反馈问题
+
+请在 [GitHub Issues](https://github.com/vryTfmcat/fontlab-online/issues) 提供：
+
+- 浏览器和操作系统；
+- 能复现问题的字符、字号及操作步骤；
+- 字体名称、格式，以及自带字体还是本地导入；
+- 预期结果与实际结果；方便时附截图或检查过内容的导出 JSON。
+
+**不必上传不能公开的字体。** 可以提供来源链接、版本信息或一个允许公开的最小样本。
+
+## 开发与维护
+
+### 本地预览
+
+这是纯静态站点，没有构建步骤、后端或依赖安装要求。在仓库目录使用已有的静态服务器，例如：
+
+```sh
+python -m http.server 8000 --bind 127.0.0.1
+```
+
+打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)。如果使用其他静态服务器也可以；不要依赖直接双击 HTML 的本地文件协议来加载自带字体。
+
+### 文件结构
 
 | 路径 | 内容 |
-|---|---|
-| `index.html` | 实验台本体（判定逻辑与离线版一致，改为相对路径 + 浏览器内本地导入） |
-| `licenses.html` | 许可与署名：公开字体清单、版权行、许可正文链接、未公开文件及原因 |
-| `data/fontlab-data.js` | 字体清单 + cmap 码点区间 + Unicode 区段表（不含任何本机路径） |
-| `fonts/` | 12 个公开字体文件（原样复制，未做任何修改） |
-| `licenses/` | 随附的许可正文与字体内嵌声明 |
-| `netlify.toml` | `publish = "."`，站点根目录即本目录 |
+| --- | --- |
+| `index.html` | 工具界面、本地导入与判定逻辑 |
+| `data/fontlab-data.js` | 自带字体清单、字符映射区间及 Unicode 区段 |
+| `fonts/` | 12 个自带字体文件 |
+| `licenses.html`、`licenses/` | 字体许可与署名 |
+| `netlify.toml` | 静态站点发布及缓存配置 |
+| `README.md`、`README.en.md` | 中文与英文使用说明 |
 
-## 本地预览
+### 更新与部署
 
-站点本身不需要任何运行时或后端，只需要一个能提供静态文件的服务器：
+当前交付采用 **Netlify CLI 手动部署**，尚未配置 Git 自动部署。仅推送 GitHub 不会同步更新线上网站。
 
-```
-npx serve .            # 或 VS Code 的 Live Server，或任何静态服务器
-```
+在已登录并关联正确项目的仓库目录中，提交所需变更、推送后，再执行：
 
-然后用浏览器打开它给出的地址。注意：**直接双击 `index.html` 打开不行** ——
-浏览器的本地文件协议会拦截字体文件的读取，字体无法加载。线上访问不受此限制。
-
-## 部署
-
-线上地址：**https://fontlab-online.netlify.app**（Netlify 项目 `fontlab-online`，免费套餐）
-
-更新内容后：
-
-```
-git add -A
-git commit -m "update"
-git push
-netlify deploy --prod --dir=.     # 在本目录执行
+```sh
+netlify deploy --prod --dir=.
 ```
 
-目前站点是 CLI 部署的，**还没有绑定 Git 自动部署**。想接上（一次性操作）：
-Netlify → 本项目 → Project configuration → Build & deploy → Continuous deployment → Link repository，
-选 `vryTfmcat/fontlab-online`，构建命令留空、发布目录填 `.`；之后 `git push` 就会自动重新发布。
+部署前确认提交和发布目录只包含要公开的文件，勿提交凭据或 `.netlify/` 状态目录。以后若连接 Git 自动部署，应同步更新这里的维护说明。
 
-## 重新生成与验收（脚本在交付目录 `07_字体盘点/_scripts/`，不在本仓库内）
+### 本地生成与验收脚本
 
+初始交付的生成、许可提取及浏览器验收脚本位于维护者的 `07_字体盘点/_scripts/`，**不在本仓库内**；克隆仓库即可运行网站，但不能直接运行这些未随仓库提供的脚本。
+
+在持有原交付材料的 `07_字体盘点/` 目录中，可运行：
+
+```sh
+python _scripts/publish_nametable.py
+python _scripts/publish_build.py
+node _scripts/publish_verify.js
 ```
-python _scripts/publish_nametable.py   # 读取公开字体 name 表里的版权 / 许可声明
-python _scripts/publish_build.py       # 复制字体 + 生成 data/ licenses/ licenses.html netlify.toml
-node   _scripts/publish_verify.js      # 真实 Chrome 验收：73 项断言
-```
 
-`publish_build.py` 会逐文件校验复制后的 SHA-256 与源文件一致，不一致直接中止。
-生成脚本只读源字体目录，不会修改任何原始字体文件。
-
+生成脚本会检查发布字体与来源文件的 SHA-256；浏览器验收脚本用于检查页面功能。具体覆盖范围以脚本和实际运行结果为准。
